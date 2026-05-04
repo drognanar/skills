@@ -79,6 +79,19 @@ runSubagent({
 
 Output: `.testagent/plan.md`
 
+### Step 4.5: BDD Specification Phase
+
+Call the `code-testing-bdd-specifier` subagent:
+
+```text
+runSubagent({
+  agent: "code-testing-bdd-specifier",
+  prompt: "Read .testagent/plan.md and all source files listed in it. Write concrete Given/When/Then scenarios for every method that needs testing. Output: .testagent/specs.md"
+})
+```
+
+Output: `.testagent/specs.md`
+
 ### Step 5: Implementation Phase
 
 Execute each phase by calling the `code-testing-implementer` subagent — once per phase, sequentially:
@@ -86,7 +99,7 @@ Execute each phase by calling the `code-testing-implementer` subagent — once p
 ```text
 runSubagent({
   agent: "code-testing-implementer",
-  prompt: "Implement Phase N from .testagent/plan.md: [phase description]. Ensure tests compile and pass."
+  prompt: "Implement Phase N from .testagent/plan.md. Use the BDD scenarios in .testagent/specs.md as the source of truth for test cases and expected values. Ensure tests compile and pass."
 })
 ```
 
@@ -164,6 +177,7 @@ All state is stored in `.testagent/` folder:
 
 - `.testagent/research.md` — Research findings
 - `.testagent/plan.md` — Implementation plan
+- `.testagent/specs.md` — BDD scenarios (produced by BDD specifier)
 - `.testagent/status.md` — Progress tracking (optional)
 
 ## Rules
