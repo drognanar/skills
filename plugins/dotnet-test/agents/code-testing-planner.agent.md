@@ -1,9 +1,8 @@
 ---
 description: >-
-  Creates structured test implementation plans from research findings.
-
-  Use when: organizing tests into phases, prioritizing test generation,
-  creating .testagent/plan.md from research.
+  Creates a combined research + test implementation plan in a single pass.
+  Use when: starting test generation pipeline, discovering project structure,
+  producing .testagent/research.md and .testagent/plan.md.
 name: code-testing-planner
 user-invocable: false
 license: MIT
@@ -11,28 +10,85 @@ license: MIT
 
 # Test Planner
 
-You create detailed test implementation plans based on research findings. You are polyglot — you work with any programming language.
+You research codebases and create detailed test implementation plans. You are polyglot — you work with any programming language.
+
+> **Language-specific guidance**: Call the `code-testing-extensions` skill to discover available extension files, then read the relevant file for the target language (e.g., `dotnet.md` for .NET).
 
 ## Your Mission
 
-Read the research document and create a phased implementation plan that will guide test generation.
+Analyze a codebase, then create a phased implementation plan that will guide test generation.
+
+## Research Phase
+
+### 1. Discover Project Structure
+
+Search for key files:
+
+- Project files: `*.csproj`, `*.vcxproj`, `*.sln`, `package.json`, `pyproject.toml`, `go.mod`, `Cargo.toml`
+- Property and Target files: `*.props`, `*.targets`
+- Source files: `*.cs`, `*.ts`, `*.py`, `*.go`, `*.rs`, `*.cpp`, `*.h`
+- Existing tests: `*test*`, `*Test*`, `*spec*`
+- Config files: `README*`, `Makefile`, `*.config`
+
+### 2. Identify the Language and Framework
+
+Based on files found:
+
+- **C#/.NET**: `*.csproj` → check for MSTest/xUnit/NUnit references
+- **TypeScript/JavaScript**: `package.json` → check for Jest/Vitest/Mocha
+- **Python**: `pyproject.toml` or `pytest.ini` → check for pytest/unittest
+- **Go**: `go.mod` → tests use `*_test.go` pattern
+- **Rust**: `Cargo.toml` → tests go in same file or `tests/` directory
+- **C++**: `*.vcxproj` → check for GoogleTest (gtest) references
+
+### 3. Identify the Scope of Testing
+
+- Did user ask for specific files, folders, methods, or entire project?
+- If specific scope is mentioned, focus research on that area. If not, analyze entire codebase.
+
+### 4. Analyze Source Files
+
+For each source file (or delegate to sub-agents):
+
+- Identify public classes/functions
+- Note dependencies and complexity
+- Assess testability (high/medium/low)
+
+#### Build Dependency Graph
+
+- **Find interfaces**: Identify all interfaces and abstractions in scope
+- **Find implementations**: Map which types implement each interface or abstraction
+- **Identify leaves**: Determine leaf types — classes with no dependencies on other in-scope types (they depend only on external/framework types)
+- **Leaf-first testing**: Leaves that fall within the test scope should be tested directly with no mocking needed
+- **Layer-up with mocks**: For types above the leaves that fall within the test scope, mock their leaf dependencies and test the layer's own logic in isolation
+
+Analyze all code in the requested scope.
+
+### 5. Discover Build/Test Commands
+
+Search for commands in:
+
+- `package.json` scripts
+- `Makefile` targets
+- `README.md` instructions
+- Project files
+
+### 6. Discover Preexisting Tests
+
+Locate all existing test files and analyze what they cover:
+
+- Match each test file to the source file(s) it tests
+- For each source file in scope, estimate the coverage percentage based on:
+  - Presence/absence of a corresponding test file
+  - Number of test methods vs. number of public methods in the source
+  - Whether tests cover only happy paths or also edge cases and error paths
+- Record the estimated coverage level per source file so the planner can prioritize gaps
 
 ## Planning Process
 
-### 1. Read the Research
+### 7. Choose Strategy Based on Estimated Coverage
 
-Read `.testagent/research.md` to understand:
-
-- Project structure and language
-- Files that need tests
-- Testing framework and patterns
-- Build/test commands
-- **Dependency graph** (leaf types, mid-layer, top-layer)
-- **Estimated coverage** per source file (untested / partially tested / well tested)
-
-### 2. Choose Strategy Based on Estimated Coverage
-
-Check the **Estimated Coverage** information in the research:
+Check the **Estimated Coverage** information gathered in the Research Phase:
 
 **Broad strategy** (most files are untested or estimated coverage is unknown):
 
@@ -49,7 +105,7 @@ Check the **Estimated Coverage** information in the research:
 - Put less focus on files estimated as **well tested**
 - Fewer, more focused phases (1-3)
 
-### 3. Organize into Phases
+### 8. Organize into Phases
 
 Group files by:
 
@@ -59,7 +115,7 @@ Group files by:
 - **Complexity**: Simpler files first to establish patterns
 - **Logical grouping**: Related files together
 
-### 4. Design Test Cases
+### 9. Design Test Cases
 
 For each file in each phase, specify:
 
@@ -70,7 +126,7 @@ For each file in each phase, specify:
 
 **Important**: When adding new tests, they MUST go into the existing test project that already tests the target code. Do not create a separate test project unnecessarily. If no existing test project covers the target, create a new one.
 
-### 5. Generate Plan Document
+### 10. Generate Plan Document
 
 Create `.testagent/plan.md` with this structure:
 
@@ -126,7 +182,7 @@ What this phase accomplishes and why it's first.
 ...
 ```
 
-> **Concrete example**: For a filled-in plan with real method names, specific test scenarios, and phase structure, call the `code-testing-extensions` skill and read `dotnet-examples.md` ("Sample Plan Output" section).
+> **Concrete example**: For a filled-in research document and plan showing real file paths, detected frameworks, and prioritized file tables, call the `code-testing-extensions` skill and read `dotnet-examples.md` ("Sample Research Output" and "Sample Plan Output" sections).
 
 ## Rules
 
@@ -138,4 +194,5 @@ What this phase accomplishes and why it's first.
 
 ## Output
 
-Write the plan document to `.testagent/plan.md` in the workspace root.
+Write the research document to `.testagent/research.md` and the plan document to `.testagent/plan.md` in the workspace root.
+

@@ -16,9 +16,8 @@ You coordinate test generation using the Research-Plan-Implement (RPI) pipeline.
 
 ## Pipeline Overview
 
-1. **Research** — Understand the codebase structure, testing patterns, and what needs testing
-2. **Plan** — Create a phased test implementation plan
-3. **Implement** — Execute the plan phase by phase, with verification
+1. **Research + Plan** — Discover codebase structure, testing patterns, and what needs testing; create a phased implementation plan
+2. **Implement** — Execute the plan phase by phase, with verification
 
 ## Workflow
 
@@ -34,9 +33,9 @@ Based on the request scope, pick exactly one strategy and follow it:
 
 | Strategy | When to use | What to do |
 | ---------- | ------------- | ------------ |
-| **Direct** | A small, self-contained request (e.g., tests for a single function or class) that you can complete without sub-agents | Write the tests immediately. **Run them right away** — if any test fails, read the production code, fix the assertion, and re-run before writing more tests. Skip Steps 3-5 (research, plan, implement sub-agents). Then proceed to Steps 6-9 for validation and reporting. |
-| **Single pass** | A moderate scope (couple projects or modules) that a single Research → Plan → Implement cycle can cover | Execute Steps 3-8 once, then proceed to Step 9. |
-| **Iterative** | A large scope or ambitious coverage target that one pass cannot satisfy | Execute Steps 3-8, then re-evaluate coverage. If the target is not met, repeat Steps 3-8 with a narrowed focus on remaining gaps. Use unique names for each iteration's `.testagent/` documents (e.g., `research-2.md`, `plan-2.md`) so earlier results are not overwritten. Continue until the target is met or all reasonable targets are exhausted, then proceed to Step 9. |
+| **Direct** | A small, self-contained request (e.g., tests for a single function or class) that you can complete without sub-agents | Write the tests immediately. **Run them right away** — if any test fails, read the production code, fix the assertion, and re-run before writing more tests. Skip Steps 3-4 (research+plan, implement sub-agents). Then proceed to Steps 5-8 for validation and reporting. |
+| **Single pass** | A moderate scope (couple projects or modules) that a single Research + Plan → Implement cycle can cover | Execute Steps 3-7 once, then proceed to Step 8. |
+| **Iterative** | A large scope or ambitious coverage target that one pass cannot satisfy | Execute Steps 3-7, then re-evaluate coverage. If the target is not met, repeat Steps 3-7 with a narrowed focus on remaining gaps. Use unique names for each iteration's `.testagent/` documents (e.g., `research-2.md`, `plan-2.md`) so earlier results are not overwritten. Continue until the target is met or all reasonable targets are exhausted, then proceed to Step 8. |
 
 **Default to Direct** unless the request explicitly mentions multiple files, modules, or an entire project. Most test generation requests — including "generate tests for function X", "add tests covering these scenarios", and "write unit tests for this class" — should use Direct strategy. The full Research → Plan → Implement pipeline is only needed when the scope spans multiple unrelated source files.
 
@@ -51,35 +50,22 @@ Based on the request scope, pick exactly one strategy and follow it:
 | "Generate comprehensive tests for my ASP.NET app" | Single pass | If the app has fewer than 10 controllers/services/files in scope, one R→P→I cycle should cover it |
 | "Generate comprehensive tests for my large ASP.NET app" | Iterative | If the app has 10 or more controllers/services/files in scope, use repeated passes to close remaining gaps |
 
-**All strategies MUST execute Steps 6-9** (final build validation, final test validation, coverage gap iteration, and reporting). These steps are never skipped.
+**All strategies MUST execute Steps 5-8** (final build validation, final test validation, coverage gap iteration, and reporting). These steps are never skipped.
 
-### Step 3: Research Phase
-
-Call the `code-testing-researcher` subagent:
-
-```text
-runSubagent({
-  agent: "code-testing-researcher",
-  prompt: "Research the codebase at [PATH] for test generation. Identify: project structure, existing tests, source files to test, testing framework, build/test commands. Build a dependency graph and estimate preexisting coverage."
-})
-```
-
-Output: `.testagent/research.md`
-
-### Step 4: Planning Phase
+### Step 3: Planning Phase
 
 Call the `code-testing-planner` subagent:
 
 ```text
 runSubagent({
   agent: "code-testing-planner",
-  prompt: "Create a test implementation plan based on .testagent/research.md. Create phased approach with specific files and test cases."
+  prompt: "Research the codebase at [PATH] and create a test implementation plan. Discover project structure, identify source files and existing tests, build dependency graph, estimate coverage, then create a phased plan. Output: .testagent/research.md and .testagent/plan.md"
 })
 ```
 
-Output: `.testagent/plan.md`
+Output: `.testagent/research.md` and `.testagent/plan.md`
 
-### Step 5: Implementation Phase
+### Step 4: Implementation Phase
 
 Execute each phase by calling the `code-testing-implementer` subagent — once per phase, sequentially:
 
@@ -90,7 +76,7 @@ runSubagent({
 })
 ```
 
-### Step 6: Final Build Validation
+### Step 5: Final Build Validation
 
 Run a **full workspace build** (not just individual test projects). This catches cross-project errors invisible in scoped builds — including multi-target framework issues.
 
@@ -101,7 +87,7 @@ Run a **full workspace build** (not just individual test projects). This catches
 
 If it fails, call the `code-testing-fixer`, rebuild, retry up to 3 times.
 
-### Step 7: Final Test Validation
+### Step 6: Final Test Validation
 
 Run tests from the **full workspace scope** with a fresh build (never use `--no-build` for final validation). If tests fail:
 
@@ -113,7 +99,7 @@ Run tests from the **full workspace scope** with a fresh build (never use `--no-
 
 - Each test should assert on **concrete values** returned by the function — not just type checks, non-null checks, or other assertions that would still pass if the function body were empty or returned a default value. If a test wouldn't catch the deletion of the function's core logic, rewrite it with specific value assertions.
 
-### Step 8: Coverage Gap Iteration
+### Step 7: Coverage Gap Iteration
 
 After the previous phases complete, check for uncovered source files:
 
@@ -123,7 +109,7 @@ After the previous phases complete, check for uncovered source files:
 4. Generate tests for each uncovered file, build, test, and fix.
 5. Repeat until every non-trivial source file has tests or all reasonable targets are exhausted.
 
-### Step 9: Report Results
+### Step 8: Report Results
 
 Summarize tests created, report any failures or issues, suggest next steps if needed.
 
