@@ -79,6 +79,31 @@ runSubagent({
 
 Output: `.testagent/plan.md`
 
+### Step 4.5: Rubber Duck Review
+
+Call the built-in `rubber-duck` agent to critically review the plan against the actual source code before any implementation begins:
+
+```text
+runSubagent({
+  agent: "rubber-duck",
+  prompt: "Review the test implementation plan in .testagent/plan.md. Read each source file referenced in the plan and verify: (1) method names and signatures exist as described, (2) expected return values are correct for the planned inputs — trace the actual logic, don't guess, (3) exception conditions actually throw as stated, (4) dependencies are injectable/mockable and not static or newed internally, (5) there are no significant code branches the plan misses entirely."
+})
+```
+
+Read the rubber duck's feedback:
+
+- **If no blocking issues**: proceed to Step 5 (Implementation).
+- **If blocking issues are found**: call the `code-testing-planner` subagent again with the feedback as additional context:
+
+```text
+runSubagent({
+  agent: "code-testing-planner",
+  prompt: "Revise .testagent/plan.md to address the following blocking issues identified in the rubber duck review: [paste blocking issues here]. Correct wrong expected values, fix phantom method references, and fill coverage gaps."
+})
+```
+
+Then call the rubber duck reviewer once more to confirm the revision is clean. Limit revision cycles to 2.
+
 ### Step 5: Implementation Phase
 
 Execute each phase by calling the `code-testing-implementer` subagent — once per phase, sequentially:
