@@ -81,14 +81,20 @@ Output: `.testagent/plan.md`
 
 ### Step 5: Implementation Phase
 
-Execute each phase by calling the `code-testing-implementer` subagent — once per phase, sequentially:
+Read `.testagent/plan.md` to identify all phases. Determine which phases are independent (no phase depends on artifacts produced by another phase in the same pass).
+
+**Dispatch independent phases in parallel** by launching all their `code-testing-implementer` sub-agents simultaneously:
 
 ```text
-runSubagent({
-  agent: "code-testing-implementer",
-  prompt: "Implement Phase N from .testagent/plan.md: [phase description]. Ensure tests compile and pass."
-})
+// Launch all independent phases at the same time
+runSubagent({ agent: "code-testing-implementer", prompt: "Implement Phase 1 from .testagent/plan.md: [phase description]. Ensure tests compile and pass." })
+runSubagent({ agent: "code-testing-implementer", prompt: "Implement Phase 2 from .testagent/plan.md: [phase description]. Ensure tests compile and pass." })
+runSubagent({ agent: "code-testing-implementer", prompt: "Implement Phase N from .testagent/plan.md: [phase description]. Ensure tests compile and pass." })
 ```
+
+Wait for all parallel sub-agents to complete before proceeding to Step 6.
+
+**Sequential fallback**: If a phase explicitly depends on test files or project registrations produced by a prior phase, run those phases sequentially rather than in parallel.
 
 ### Step 6: Final Build Validation
 
