@@ -52,18 +52,15 @@ Based on the request scope, pick exactly one strategy and follow it:
 
 **All strategies MUST execute Steps 5-8** (final build validation, final test validation, coverage gap iteration, and reporting). These steps are never skipped.
 
-### Step 3: Planning Phase
+### Step 3: Self-directed Planning Phase
 
-Call the `code-testing-planner` subagent:
+**Do not call the `code-testing-planner` sub-agent.** Instead, perform research and planning inline:
 
-```text
-runSubagent({
-  agent: "code-testing-planner",
-  prompt: "Research the codebase at [PATH] and create a test implementation plan. Discover project structure, identify source files and existing tests, build dependency graph, estimate coverage, then create a phased plan. Output: .testagent/research.md and .testagent/plan.md"
-})
-```
+1. List all source files in scope using `search` or `read`.
+2. For each source file, note: public types, methods, existing test coverage, dependencies to mock.
+3. Write a brief plan directly in `.testagent/plan.md` — a numbered list of phases where each phase names the source file(s) to test and the key test cases to write.
 
-Output: `.testagent/research.md` and `.testagent/plan.md`
+Spend no more than one model call on planning. The goal is a minimal, actionable list — not a thorough research document.
 
 ### Step 4: Implementation Phase
 
