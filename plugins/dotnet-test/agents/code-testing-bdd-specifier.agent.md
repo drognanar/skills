@@ -18,10 +18,11 @@ Read the test plan and the source code, then write detailed Given/When/Then scen
 
 ## Process
 
-### 1. Read the Plan and Research
+### 1. Research the Codebase
 
-- Read `.testagent/plan.md` to understand which methods need tests
-- Read `.testagent/research.md` for project context and dependency graph
+- List all source files in scope using `search` or by reading the project/solution file
+- Identify the testing framework and how to run tests
+- For each source file in scope, read it completely
 
 ### 2. Read Source Code
 
