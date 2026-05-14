@@ -1,6 +1,6 @@
 ---
 description: >-
-  Orchestrates comprehensive test generation using
+  Orchestrates comprehensive test generation always using the
   Research-Plan-Implement pipeline. Use when asked to generate tests, write unit
   tests, improve test coverage, or add tests.
 name: code-testing-generator
@@ -26,7 +26,7 @@ You coordinate test generation using the Research-Plan-Implement (RPI) pipeline.
 
 Understand what the user wants: scope (project, files, classes), priority areas, framework preferences. If clear, proceed directly. If the user provides no details or a very basic prompt (e.g., "generate tests"), use [unit-test-generation.prompt.md](../skills/code-testing-agent/unit-test-generation.prompt.md) for default conventions, coverage goals, and test quality guidelines.
 
-**Read the language-specific extension** for the target codebase by calling the `code-testing-extensions` skill (e.g., read `dotnet.md` for .NET/C# projects). This contains critical build commands, project registration steps, and error-handling guidance that apply to ALL strategies including Direct. You MUST read this file before writing any code.
+**Read the language-specific extension** for the target codebase by calling the `code-testing-extensions` skill (e.g., read `dotnet.md` for .NET/C# projects). This contains critical build commands, project registration steps, and error-handling guidance that apply to all strategies. You MUST read this file before writing any code.
 
 ### Step 2: Choose Execution Strategy
 
@@ -34,22 +34,20 @@ Based on the request scope, pick exactly one strategy and follow it:
 
 | Strategy | When to use | What to do |
 | ---------- | ------------- | ------------ |
-| **Direct** | A small, self-contained request (e.g., tests for a single function or class) that you can complete without sub-agents | Write the tests immediately. **Run them right away** — if any test fails, read the production code, fix the assertion, and re-run before writing more tests. Skip Steps 3-5 (research, plan, implement sub-agents). Then proceed to Steps 6-9 for validation and reporting. |
 | **Single pass** | A moderate scope (couple projects or modules) that a single Research → Plan → Implement cycle can cover | Execute Steps 3-8 once, then proceed to Step 9. |
 | **Iterative** | A large scope or ambitious coverage target that one pass cannot satisfy | Execute Steps 3-8, then re-evaluate coverage. If the target is not met, repeat Steps 3-8 with a narrowed focus on remaining gaps. Use unique names for each iteration's `.testagent/` documents (e.g., `research-2.md`, `plan-2.md`) so earlier results are not overwritten. Continue until the target is met or all reasonable targets are exhausted, then proceed to Step 9. |
 
-**Default to Direct** unless the request explicitly mentions multiple files, modules, or an entire project. Most test generation requests — including "generate tests for function X", "add tests covering these scenarios", and "write unit tests for this class" — should use Direct strategy. The full Research → Plan → Implement pipeline is only needed when the scope spans multiple unrelated source files.
+**Default to Single pass** unless the request spans a large codebase or sets an ambitious coverage target (e.g., "achieve 80% coverage" or "generate comprehensive tests for the whole solution"). For large scopes, use Iterative.
 
 **Strategy decision examples:**
 
 | User request | Strategy | Reasoning |
 |---|---|---|
-| "Write tests for `src/InvoiceService.cs`" | Direct | Single file, can write tests immediately without sub-agents |
+| "Write tests for `src/InvoiceService.cs`" | Single pass | Single file, one R→P→I cycle covers it |
 | "Generate tests for the billing module" | Single pass | Moderate scope (handful of files), one R→P→I cycle covers it |
+| "Generate comprehensive tests for my ASP.NET app" | Single pass | App has fewer than 10 controllers/services/files in scope, one R→P→I cycle covers it |
 | "Achieve 80% coverage across the whole solution" | Iterative | Large scope, first pass covers the obvious gaps, subsequent passes target remaining uncovered code |
-| "Add tests for this function" (with file open) | Direct | Single function is trivially small scope |
-| "Generate comprehensive tests for my ASP.NET app" | Single pass | If the app has fewer than 10 controllers/services/files in scope, one R→P→I cycle should cover it |
-| "Generate comprehensive tests for my large ASP.NET app" | Iterative | If the app has 10 or more controllers/services/files in scope, use repeated passes to close remaining gaps |
+| "Generate comprehensive tests for my large ASP.NET app" | Iterative | App has 10 or more controllers/services/files in scope, use repeated passes to close remaining gaps |
 
 **All strategies MUST execute Steps 6-9** (final build validation, final test validation, coverage gap iteration, and reporting). These steps are never skipped.
 
@@ -178,5 +176,5 @@ All state is stored in `.testagent/` folder:
 8. **Fix assertions, don't skip tests** — when tests fail, read production code and fix the expected value; never `[Ignore]` or `[Skip]`
 9. **Clean up `.testagent/`** — after pipeline completion, delete the `.testagent/` folder or advise the user to add it to `.gitignore` so ephemeral state is not committed
 10. **Read language extensions first** — always call the `code-testing-extensions` skill and read the relevant extension file before writing any code; it contains critical project registration and build validation steps
-11. **Always validate** — final build, final test, coverage-gap review, and reporting are mandatory for ALL strategies including Direct; never skip final validation
+11. **Always validate** — final build, final test, coverage-gap review, and reporting are mandatory for all strategies; never skip final validation
 12. **Preserve existing tests** — never delete or overwrite existing test files; create new files or append to existing ones
