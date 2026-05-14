@@ -7,6 +7,7 @@ description: >-
 name: code-testing-researcher
 user-invocable: false
 license: MIT
+model: claude-opus-4.7
 ---
 
 # Test Researcher

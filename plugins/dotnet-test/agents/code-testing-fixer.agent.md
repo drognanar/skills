@@ -7,6 +7,7 @@ description: >-
 name: code-testing-fixer
 user-invocable: false
 license: MIT
+model: claude-haiku-4.5
 ---
 
 # Fixer Agent
